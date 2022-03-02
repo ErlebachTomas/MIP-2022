@@ -1,4 +1,6 @@
 .dist
+.vscode
+
 # Prerequisites
 *.d
 
