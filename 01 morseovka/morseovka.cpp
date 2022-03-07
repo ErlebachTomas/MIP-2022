@@ -5,7 +5,7 @@
 #define BLINKING_SHORT    500ms
 #define BLINKING_LONG    1500ms // mazera jako 3 tečky
 #define SYMBOL_SPACE     500ms // pauza za znakem
-#define LETTER_SPACE    1500ms // mezera mezi slovy jako tri tecky
+#define LETTER_SPACE    1000ms // 2x SYMBOL_SPACE (např. 500 + 1000, mezera mezi slovy jako tri tecky)
 
 /// <summary>Prevede znak na odpovidajici morseuv kod (zachova mezery)</summary>
 string morseEncode(char x)
@@ -94,10 +94,10 @@ string morseEncode(char x)
 
 // <summary>zakoduje retezec do morseova kodu </summary>
 string morseCode(string s) {
-    int lenght = s.length();
+    int length = s.length();
     string str;
 
-    for (int i = 0; i < lenght; i++) {
+    for (int i = 0; i < length; i++) {
 
         str.append(morseEncode(s[i]));           
     }
@@ -105,10 +105,58 @@ string morseCode(string s) {
     return str;
 }
 
+void blinkSwitch(DigitalOut led, string code) {
+
+    int length = code.length();  
+
+    for (int i = 0; i < length; i++) {
+
+        blinkChar(led, code[i]);
+    }
+
+}
+
+
+void blinkChar(DigitalOut led,char ch) {
+
+    switch (ch) {    
+    case '.': blink(led, BLINKING_SHORT);
+              turnOffLed(led, SYMBOL_SPACE);
+    case '-': blink(led, BLINKING_LONG);
+              turnOffLed(led, SYMBOL_SPACE);
+    default:
+        turnOffLed(led, LETTER_SPACE);
+       
+    }
+
+
+}
+
+void blink(DigitalOut led, BLINKING_RATE) {
+
+    led = 1;
+    ThisThread::sleep_for(BLINKING_RATE);
+    
+}
+void turnOffLed(DigitalOut led, RATE) {
+    led = 0;
+    ThisThread::sleep_for(RATE);
+}
+
 int main()
 {
+    #ifdef LED1
+        DigitalOut led(LED1);
+    #else
+        bool led;
+    #endif
+
+
     string s = "Karel Drnec a Tomas Erlebach";
         
     string str = morseCode(s);
+    blinkSwitch(led,str);
+
+
     //cout << str << endl;
 }
