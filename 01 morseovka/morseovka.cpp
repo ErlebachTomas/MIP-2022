@@ -166,8 +166,10 @@ int main()
     string s = "Karel Drnec a Tomas Erlebach";
 
     string str = morseCode(s);
-    blinkSwitch(led, str);
-
+    
+    while(true){
+        blinkSwitch(led, str);
+    }
 
     //cout << str << endl;
 }
