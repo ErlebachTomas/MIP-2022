@@ -3,14 +3,6 @@
 //#include <map>
 
 
-/// <summary>
-/// Èíselník událostí
-/// </summary>
-enum class Event {
-	reset,
-	explosion,
-	set
-};
 
 /* todo odstranit pak (nepouziva se) 
 /// <summary>

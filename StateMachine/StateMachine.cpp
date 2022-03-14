@@ -1,85 +1,55 @@
-#include <iostream>
-#include "State.h"
+ï»¿#include <iostream>
+#include "StateMachine.h"
 using namespace std;
 
-/// <summary>
-/// Implementace stavového automatu pomocí návrhového vzoru state 
-/// </summary>
-class AbstractState {
-public:   
-    virtual ~AbstractState() {}
-    /// <summary>
-    /// Vrátí následující stav 
-    /// </summary>
-    /// <param name="e">Událost øídící pøechod</param>
-    /// <returns>Stav v dalším kroce</returns>
-    virtual AbstractState* nextState(Event e) {
+
+//TODO definice konkrÃ©tnÃ­ch stavÅ¯
+void CoutingState::action() {
+    cout << "Casovac, tik tak, tik tak..." << endl;
+};
+
+AbstractState* CoutingState::nextState(Event e) {
+    switch (e) {
+    case Event::explosion:
+        return new BumState();
+    case Event::set:
+        return new SetState();
+    default:
         return this;
-    };
-    /// <summary>
-    /// Akce stavu
-    /// </summary>
-    virtual void action() = 0;
-};
-
-//TODO definice konkrétních stavù
-class CoutingState : public AbstractState {
-public: 
-    ~CoutingState() {}
-
-    void action() {
-        cout << "Èasovaè, tik tak, tik tak..." << endl;
     }
-    
-    AbstractState* nextState(Event e) {
-        switch (e) {
-        case Event::explosion:
-            return new BumState();
-        case Event::set:
-            return new SetState();
-        default:
-            return this;
-        }    
-    }
-    
-};
+}
 
-class BumState : public AbstractState {
-   
-    ~BumState() {}
-
-    void action() {
+void BumState::action() {
         cout << "BUM!" << endl;
+}
+
+AbstractState* BumState::nextState(Event e) {
+    switch (e) {
+    case Event::reset:
+        return new CoutingState();
+    default:
+        return this;
     }
 
-    AbstractState* nextState(Event e) {
-        switch (e) {
-        case Event::reset:
-            return new CoutingState();
-        default:
-            return this;
-        }
-
-    }
 };
 
-class SetState : public AbstractState {
-    ~SetState() {}
 
-    void action() {
-        cout << "Otevøít nastavení" << endl;
-    }
+void SetState::action() {
+    cout << "Otevrit nastaveni" << endl;
 };
+AbstractState* SetState::nextState(Event e) {
+    return this;
+} 
 
 /// <summary>
-/// Drí kontext s aktuálním stavem, pøechod øízen pomocí událostí 
+/// DrÅ¾Ã­ kontext s aktuÃ¡lnÃ­m stavem, pÅ™echod Å™Ã­zen pomocÃ­ udÃ¡lostÃ­ 
 /// </summary>
 class Machine {
 public:
     /// <summary>
-    /// Konstruktor stavového automatu, vyaduje zadání poèáteèního stavu 
+    /// Konstruktor stavovÃ©ho automatu, vyÅ¾aduje zadÃ¡nÃ­ poÄÃ¡teÄnÃ­ho stavu 
     /// </summary>
-    /// <param name="startState">Poèáteèní stav</param>
+    /// <param name="startState">PoÄÃ¡teÄnÃ­ stav</param>
     Machine(AbstractState* const startState)  {    
         this->setState(startState);
     }    
@@ -90,7 +60,7 @@ public:
     }
 
     /// <summary>
-    /// Na základì události pøepne stav a spustí akci
+    /// Na zÃ¡kladÄ› udÃ¡losti pÅ™epne stav a spustÃ­ akci
     /// </summary>
     void event(Event e) {     
        this->setState(state->nextState(e));
@@ -98,7 +68,7 @@ public:
     }
         
     /// <summary>
-    /// Spustí akci uvnitø aktuálního stavu
+    /// SpustÃ­ akci uvnitÅ™ aktuÃ¡lnÃ­ho stavu
     /// </summary>
     void run() {
         state->action();
@@ -106,12 +76,12 @@ public:
 
 private:
     /// <summary>
-    /// Drí aktuální stav
+    /// DrÅ¾Ã­ aktuÃ¡lnÃ­ stav
     /// </summary>
     AbstractState* state;
 
     /// <summary>
-    /// Zmìní stav
+    /// ZmÄ›nÃ­ stav
     /// </summary>    
     void setState(AbstractState* const s) {
         if (state) {
@@ -124,7 +94,7 @@ private:
 int main() {
     Machine* MachineContext = new Machine(new CoutingState());
     MachineContext->run();
-
+    // zpracovani udalosti
     MachineContext->event(Event::explosion);
     MachineContext->event(Event::reset);
     MachineContext->event(Event::set);
