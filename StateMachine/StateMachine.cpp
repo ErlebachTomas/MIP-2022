@@ -1,21 +1,132 @@
-// StateMachine.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include "State.h"
 using namespace std;
 
-int main()
-{
-    cout << "Hello World!\n";
+/// <summary>
+/// Implementace stavového automatu pomocí návrhového vzoru state 
+/// </summary>
+class AbstractState {
+public:   
+    virtual ~AbstractState() {}
+    /// <summary>
+    /// Vrátí následující stav 
+    /// </summary>
+    /// <param name="e">Událost øídící pøechod</param>
+    /// <returns>Stav v dalším kroce</returns>
+    virtual AbstractState* nextState(Event e) {
+        return this;
+    };
+    /// <summary>
+    /// Akce stavu
+    /// </summary>
+    virtual void action() = 0;
+};
+
+//TODO definice konkrétních stavù
+class CoutingState : public AbstractState {
+public: 
+    ~CoutingState() {}
+
+    void action() {
+        cout << "Èasovaè, tik tak, tik tak..." << endl;
+    }
+    
+    AbstractState* nextState(Event e) {
+        switch (e) {
+        case Event::explosion:
+            return new BumState();
+        case Event::set:
+            return new SetState();
+        default:
+            return this;
+        }    
+    }
+    
+};
+
+class BumState : public AbstractState {
+   
+    ~BumState() {}
+
+    void action() {
+        cout << "BUM!" << endl;
+    }
+
+    AbstractState* nextState(Event e) {
+        switch (e) {
+        case Event::reset:
+            return new CoutingState();
+        default:
+            return this;
+        }
+
+    }
+};
+
+class SetState : public AbstractState {
+    ~SetState() {}
+
+    void action() {
+        cout << "Otevøít nastavení" << endl;
+    }
+};
+
+/// <summary>
+/// Drží kontext s aktuálním stavem, pøechod øízen pomocí událostí 
+/// </summary>
+class Machine {
+public:
+    /// <summary>
+    /// Konstruktor stavového automatu, vyžaduje zadání poèáteèního stavu 
+    /// </summary>
+    /// <param name="startState">Poèáteèní stav</param>
+    Machine(AbstractState* const startState)  {    
+        this->setState(startState);
+    }    
+    ~Machine() {
+        if (state) {
+            delete state;
+        }
+    }
+
+    /// <summary>
+    /// Na základì události pøepne stav a spustí akci
+    /// </summary>
+    void event(Event e) {     
+       this->setState(state->nextState(e));
+       state->action();
+    }
+        
+    /// <summary>
+    /// Spustí akci uvnitø aktuálního stavu
+    /// </summary>
+    void run() {
+        state->action();
+    }
+
+private:
+    /// <summary>
+    /// Drží aktuální stav
+    /// </summary>
+    AbstractState* state;
+
+    /// <summary>
+    /// Zmìní stav
+    /// </summary>    
+    void setState(AbstractState* const s) {
+        if (state) {
+            delete state;
+        }
+        state = s;
+    }
+};
+
+int main() {
+    Machine* MachineContext = new Machine(new CoutingState());
+    MachineContext->run();
+
+    MachineContext->event(Event::explosion);
+    MachineContext->event(Event::reset);
+    MachineContext->event(Event::set);
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

@@ -141,6 +141,9 @@
   <ItemGroup>
     <ClCompile Include="StateMachine.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="State.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
