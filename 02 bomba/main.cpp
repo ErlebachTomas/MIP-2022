@@ -64,7 +64,7 @@ void display() {
     HAL_Delay(1000);
     drawButtons();
     drawBomb();
-    flipper.attach(&display, 10s);
+    flipper.attach(&display, 120s);
 }
 
 int main()
@@ -109,18 +109,21 @@ int main()
     // draw bomba
     drawBomb();
     
-    flipper.attach(&display, 10s);
+    flipper.attach(&display, 120s);
     
     while(1) {
-       // print zbyvajiciho casu
-        timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
-        sprintf((char*)text, "%llu seconds remaining!!!", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+       timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
+        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Remaining Time", CENTER_MODE);
+        
+        sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
         
         // clear a display string
+        /*
         if(timeValue == 9) {
             BSP_LCD_ClearStringLine(1); 
         }
-        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)&text, CENTER_MODE);
+        */
+        BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t *)&text, CENTER_MODE);
 
         // touch detect
         BSP_TS_GetState(&TS_State);
