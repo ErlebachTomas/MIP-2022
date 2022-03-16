@@ -52,7 +52,7 @@ void display()
 {
     drawButtons();
     drawBomb();
-    flipper.attach(&display, 120s);
+    //flipper.attach(&display, 120s);
 }
 void set()
 {
@@ -189,7 +189,7 @@ public:
     }
     ~Bomba() {}
 
-    int run() {
+    void run() {
         this->MachineContext->start();               
 
         int timeValue;
@@ -229,47 +229,26 @@ public:
 
         // draw bomba
         drawBomb();
+        /*
+        Timeout flipper;
+        flipper.attach(this, &Bomba::timeOver, 100s); // odpálí bombu
+        */
+        //button.rise(&set);
 
-        p = &Bomba::timeOver;// https://stackoverflow.com/a/990637
-        flipper.attach(p, 100s); // odpálí bombu
-
-        button.rise(&set);
-
-        while (1) {
-            // print zbyvajiciho casu
-            timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
-            BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
-
-            sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
-
-            BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
-
-            // touch detect
-            BSP_TS_GetState(&TS_State);
-            if (TS_State.touchDetected) {
-                for (idx = 0; idx < TS_State.touchDetected; idx++) {
-                    x = TS_State.touchX[idx];
-                    y = TS_State.touchY[idx];
-                    if (x >= setX && x <= setX + setWidth && y >= setY && y <= setY + setHeight) {
-                        BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t*)"Bylo zmacknut set", CENTER_MODE);
-                    }
-                }
-            }
-        }
+       
     }
-    
-private:
-    /// <summary>
-    /// STAVOVÝ AUTOMAT
-    /// </summary>
-    Machine* MachineContext;
     /// <summary>
     /// Detonate
     /// </summary>
     void timeOver() {
         this->MachineContext->event(MyEvent::explosion);
-      
     }
+private:
+    /// <summary>
+    /// STAVOVÝ AUTOMAT
+    /// </summary>
+    Machine* MachineContext;
+    
     void reset() {
         this->MachineContext->event(MyEvent::reset);
     }
@@ -285,5 +264,30 @@ private:
 
 int main()
 {    
-    new Bomba()->run();    
+    Bomba* b = new Bomba();
+    b->run();
+    flipper.attach(b, &Bomba::timeOver, 100s); // odpálí bombu
+    button.rise(&set);
+
+    while (1) {
+        // print zbyvajiciho casu
+        timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
+        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
+
+        sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+
+        BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
+
+        // touch detect
+        BSP_TS_GetState(&TS_State);
+        if (TS_State.touchDetected) {
+            for (idx = 0; idx < TS_State.touchDetected; idx++) {
+                x = TS_State.touchX[idx];
+                y = TS_State.touchY[idx];
+                if (x >= setX && x <= setX + setWidth && y >= setY && y <= setY + setHeight) {
+                    BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t*)"Bylo zmacknut set", CENTER_MODE);
+                }
+            }
+        }
+    }
 }
