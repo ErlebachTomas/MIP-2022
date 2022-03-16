@@ -73,8 +73,8 @@ void set()
 { 
     uint8_t text2[30];
     HAL_Delay(1000);
-    flipper.detach();
-    flipper.attach(&set, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+    //flipper.detach();
+    flipper.attach(&display, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
 }
 
 int main()
@@ -86,8 +86,6 @@ int main()
     uint8_t text[30];
     uint8_t status;
     uint8_t idx;
-    uint8_t cleared = 0;
-    uint8_t prev_nb_touches = 0;
 
     BSP_LCD_Init();
     BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
@@ -97,6 +95,7 @@ int main()
     HAL_Delay(1000);
 
     status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+    
     if (status != TS_OK) {
         BSP_LCD_Clear(LCD_COLOR_RED);
         BSP_LCD_SetBackColor(LCD_COLOR_RED);
