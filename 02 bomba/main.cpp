@@ -18,12 +18,13 @@ using namespace std::chrono;
 InterruptIn button(BUTTON1);
 Timeout flipper;
 TS_StateTypeDef TS_State;
+int timeToAdd;
 
 void drawButtons()
 {
     // set
     BSP_LCD_DrawRect(setX, setY, setWidth, setHeight);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)"Set", CENTER_MODE);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)" ", CENTER_MODE);
     // inc
     BSP_LCD_DrawRect(incDecX, incY, incDecSize, incDecSize);
     BSP_LCD_DisplayChar(417, 135, '+');
@@ -41,11 +42,6 @@ void drawBomb()
     BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
     BSP_LCD_FillCircle(55, 120, 10);
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-}
-
-void redrawWick(int remaining_time)
-{
-    // TODO
 }
 
 void boomAnimation(int count)
@@ -73,30 +69,19 @@ void display()
     flipper.attach(&display, 120s);
 }
 
-
 void set()
-{
-    uint16_t x, y;
-    uint8_t idx;
-    BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)"Tlacitko", CENTER_MODE);
-    BSP_TS_GetState(&TS_State);
-    if (TS_State.touchDetected) {
-        for(idx = 0; idx < TS_State.touchDetected; idx++) {
-            x = TS_State.touchX[idx];
-            y = TS_State.touchY[idx];
-            if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut plus!", CENTER_MODE);
-            } else if (x >=incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut minus", CENTER_MODE);
-            }
-        }
-    }
+{ 
+    uint8_t text2[30];
+    HAL_Delay(1000);
+    flipper.detach();
+    flipper.attach(&set, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
 }
-
 
 int main()
 {
+    int isTouch = 0;
     int timeValue;
+    timeToAdd = 0;
     uint16_t x, y;
     uint8_t text[30];
     uint8_t status;
@@ -140,9 +125,13 @@ int main()
     button.rise(&set);
 
     while(1) {
-        // print zbyvajiciho casu
+        
         timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
         BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Remaining Time", CENTER_MODE);
+
+        sprintf((char*)text, "  %d  ", timeToAdd);
+        
+        BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)&text, CENTER_MODE);
 
         sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
 
@@ -154,13 +143,15 @@ int main()
             for(idx = 0; idx < TS_State.touchDetected; idx++) {
                 x = TS_State.touchX[idx];
                 y = TS_State.touchY[idx];
-                if(x >= setX && x <= setX + setWidth && y >= setY && y <= setY + setHeight) {
-                    BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Bylo zmacknut set", CENTER_MODE);
+                if(x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize && isTouch == 0) {
+                    timeToAdd += 10;
+                } else if (x >= incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize && isTouch == 0) {
+                    timeToAdd -= 10;
                 }
+                isTouch = 1;
             }
+        } else {
+            isTouch = 0;    
         }
     }
 }
-
-
-
