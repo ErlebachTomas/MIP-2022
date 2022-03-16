@@ -48,3 +48,37 @@ public:
     void action();
     AbstractState* nextState(MyEvent e);
 };
+
+/// <summary>
+/// Drží kontext s aktuálním stavem, přechod řízen pomocí událostí 
+/// </summary>
+class Machine {
+public:
+    /// <summary>
+    /// Konstruktor stavového automatu, vyžaduje zadání počátečního stavu 
+    /// </summary>
+    /// <param name="startState">Počáteční stav</param>
+    Machine(AbstractState* const startState);
+    ~Machine();
+
+    /// <summary>
+    /// Na základě události přepne stav a spustí akci
+    /// </summary>
+    void event(MyEvent e);
+
+    /// <summary>
+    /// Spustí akci uvnitř aktuálního stavu
+    /// </summary>
+    void start();
+
+private:
+    /// <summary>
+    /// Drží aktuální stav
+    /// </summary>
+    AbstractState* state;
+
+    /// <summary>
+    /// Změní stav
+    /// </summary>    
+    void setState(AbstractState* const s);
+};

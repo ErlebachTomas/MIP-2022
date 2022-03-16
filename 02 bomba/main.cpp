@@ -28,260 +28,241 @@ Machine* MachineContext = new Machine(new CoutingState());
 
 void drawButtons()
 {
-    // set
-    BSP_LCD_DrawRect(setX, setY, setWidth, setHeight);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)" ", CENTER_MODE);
-    // inc
-    BSP_LCD_DrawRect(incDecX, incY, incDecSize, incDecSize);
-    BSP_LCD_DisplayChar(417, 135, '+');
-    // dec
-    BSP_LCD_DrawRect(incDecX, decY, incDecSize, incDecSize);
-    BSP_LCD_DisplayChar(417, 195, '-');
+	// set
+	BSP_LCD_DrawRect(setX, setY, setWidth, setHeight);
+	BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)" ", CENTER_MODE);
+	// inc
+	BSP_LCD_DrawRect(incDecX, incY, incDecSize, incDecSize);
+	BSP_LCD_DisplayChar(417, 135, '+');
+	// dec
+	BSP_LCD_DrawRect(incDecX, decY, incDecSize, incDecSize);
+	BSP_LCD_DisplayChar(417, 195, '-');
 }
 
 void drawBomb()
 {
-    // draw a bomb
-    BSP_LCD_FillCircle(55, 210, 50);
-    BSP_LCD_DrawVLine(55, 130, 30);
-    BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
-    BSP_LCD_FillCircle(55, 120, 10);
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	// draw a bomb
+	BSP_LCD_FillCircle(55, 210, 50);
+	BSP_LCD_DrawVLine(55, 130, 30);
+	BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
+	BSP_LCD_FillCircle(55, 120, 10);
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 }
 
 
 void trigger() {
-    MachineContext->event(MyEvent::explosion);
+	MachineContext->event(MyEvent::explosion);
 }
 
 void triggerButton() {
-    if (timeValue + timeToAdd <= 0) {
-        timeToAdd = -timeValue + 2;
-    } 
-    MachineContext->event(MyEvent::set);
+	if (timeValue + timeToAdd <= 0) {
+		timeToAdd = -timeValue + 2;
+	}
+	MachineContext->event(MyEvent::set);
 }
 
 void displayInit()
 {
-    BSP_LCD_Init();
-    BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
-    BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
+	BSP_LCD_Init();
+	BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
+	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
 
-    BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOMBA DEMO", CENTER_MODE);
-    HAL_Delay(1000);
+	BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOMBA DEMO", CENTER_MODE);
+	HAL_Delay(1000);
 
-    status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+	status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
 
-    if (status != TS_OK) {
-        BSP_LCD_Clear(LCD_COLOR_RED);
-        BSP_LCD_SetBackColor(LCD_COLOR_RED);
-        BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT FAIL", CENTER_MODE);
-    }
-    else {
-        BSP_LCD_Clear(LCD_COLOR_GREEN);
-        BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
-        BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT OK", CENTER_MODE);
-    }
-    HAL_Delay(1000);
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
-    BSP_LCD_SetFont(&Font24);
-    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	if (status != TS_OK) {
+		BSP_LCD_Clear(LCD_COLOR_RED);
+		BSP_LCD_SetBackColor(LCD_COLOR_RED);
+		BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+		BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT FAIL", CENTER_MODE);
+	}
+	else {
+		BSP_LCD_Clear(LCD_COLOR_GREEN);
+		BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
+		BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+		BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT OK", CENTER_MODE);
+	}
+	HAL_Delay(1000);
+	BSP_LCD_Clear(LCD_COLOR_WHITE);
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 
-    // draw buttons
-    drawButtons();
+	// draw buttons
+	drawButtons();
 
-    // draw bomba
-    drawBomb();
+	// draw bomba
+	drawBomb();
 
-    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
+	BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
 
-    flipper.attach(&trigger, 120s);
+	flipper.attach(&trigger, 120s);
 
-    button.rise(&triggerButton);
+	button.rise(&triggerButton);
 
 }
 
 void CoutingState::action() {
-    timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
+	timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
 
-    sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
-    BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
+	sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+	BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
 
-    sprintf((char*)text, "  %d  ", timeToAdd);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
+	sprintf((char*)text, "  %d  ", timeToAdd);
+	BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
 };
 
 AbstractState* CoutingState::nextState(MyEvent e) {
-    switch (e) {
-    case MyEvent::explosion:
-        return new BumState();
-    case MyEvent::set:
-        return new SetState();
-    default:
-        return this;
-    }
+	switch (e) {
+	case MyEvent::explosion:
+		return new BoomState();
+	case MyEvent::set:
+		return new SetState();
+	default:
+		return this;
+	}
 }
 
-void BumState::action() {
-    
-    boomAnimation(4);
-    HAL_Delay(1000);
+void BoomState::action() {
 
-    this->event(MyEvent::reset);
+	boomAnimation(4);
+	HAL_Delay(1000);
 
+	this->nextState(MyEvent::reset);
+	
 }
-void BumState::reset() {
+void BoomState::reset() {
 
-    HAL_Delay(1000);
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
-    BSP_LCD_SetFont(&Font24);
-    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	HAL_Delay(1000);
+	BSP_LCD_Clear(LCD_COLOR_WHITE);
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 
-    timeToAdd = 0;
-    // draw buttons
-    drawButtons();
+	timeToAdd = 0;
+	// draw buttons
+	drawButtons();
 
-    // draw bomba
-    drawBomb();
+	// draw bomba
+	drawBomb();
 
-    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
+	BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
 
-    sprintf((char*)text, "  %d  ", timeToAdd);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
+	sprintf((char*)text, "  %d  ", timeToAdd);
+	BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
 
-    flipper.attach(&trigger, 120s);
+	flipper.attach(&trigger, 120s);
 
-    button.rise(&triggerButton);
+	button.rise(&triggerButton);
 }
 
-AbstractState* BumState::nextState(MyEvent e) {
-    switch (e) {
-    case MyEvent::reset:
-                    this->reset();
-        return new CoutingState();
-    default:
-        return this;
-    }
+AbstractState* BoomState::nextState(MyEvent e) {
+	switch (e) {
+	case MyEvent::reset:
+		this->reset();
+		return new CoutingState();
+	default:
+		return this;
+	}
 
 };
 
 
-void BumState::boomAnimation(int count)
+void BoomState::boomAnimation(int count)
 {
-    for (int i = 0; i < count; i++) {
-        BSP_LCD_Clear(LCD_COLOR_RED);
-        BSP_LCD_SetFont(&Font24);
-        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOOM!", CENTER_MODE);
-        HAL_Delay(500);
-        BSP_LCD_ClearStringLine(5);
-        BSP_LCD_Clear(LCD_COLOR_DARKGRAY);
-        BSP_LCD_SetFont(&Font24);
-        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"PRASK!", CENTER_MODE);
-        HAL_Delay(500);
-    }
-    BSP_LCD_Clear(LCD_COLOR_WHITE);
+	for (int i = 0; i < count; i++) {
+		BSP_LCD_Clear(LCD_COLOR_RED);
+		BSP_LCD_SetFont(&Font24);
+		BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOOM!", CENTER_MODE);
+		HAL_Delay(500);
+		BSP_LCD_ClearStringLine(5);
+		BSP_LCD_Clear(LCD_COLOR_DARKGRAY);
+		BSP_LCD_SetFont(&Font24);
+		BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"PRASK!", CENTER_MODE);
+		HAL_Delay(500);
+	}
+	BSP_LCD_Clear(LCD_COLOR_WHITE);
 }
 
 
 void SetState::action() {
 
-    HAL_Delay(1000);
+	HAL_Delay(1000);
 
-    flipper.attach(&trigger, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+	flipper.attach(&trigger, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
 
-    timeToAdd = 0;
-    sprintf((char*)text, "  %d  ", timeToAdd);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
+	timeToAdd = 0;
+	sprintf((char*)text, "  %d  ", timeToAdd);
+	BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
 
 };
 AbstractState* SetState::nextState(MyEvent e) {
-    return new CoutingState();
+	return new CoutingState();
+}
+
+
+Machine::Machine(AbstractState* const startState) {
+	this->setState(startState);
+}
+Machine::~Machine() {
+	if (this->state) {
+		delete this->state;
+	}
 }
 
 /// <summary>
-/// Drží kontext s aktuálním stavem, přechod řízen pomocí událostí 
+/// Na základě události přepne stav a spustí akci
 /// </summary>
-class Machine {
-public:
-    /// <summary>
-    /// Konstruktor stavového automatu, vyžaduje zadání počátečního stavu 
-    /// </summary>
-    /// <param name="startState">Počáteční stav</param>
-    Machine(AbstractState* const startState) {
-        this->setState(startState);
-    }
-    ~Machine() {
-        if (state) {
-            delete state;
-        }
-    }
+void Machine::event(MyEvent e) {
+	this->setState(state->nextState(e));
+	this->state->action();
+}
 
-    /// <summary>
-    /// Na základě události přepne stav a spustí akci
-    /// </summary>
-    void event(MyEvent e) {
-        this->setState(state->nextState(e));
-        state->action();
-    }
+/// <summary>
+/// Spustí akci uvnitř aktuálního stavu
+/// </summary>
+void Machine::start() {
+	this->state->action();
+}
 
-    /// <summary>
-    /// Spustí akci uvnitř aktuálního stavu
-    /// </summary>
-    void start() {
-        state->action();
-    }
-
-private:
-    /// <summary>
-    /// Drží aktuální stav
-    /// </summary>
-    AbstractState* state;
-
-    /// <summary>
-    /// Změní stav
-    /// </summary>    
-    void setState(AbstractState* const s) {
-        if (state) {
-            delete state;
-        }
-        state = s;
-    }
-};
-
+void Machine::setState(AbstractState* const s) {
+	if (this->state) {
+		delete this->state;
+	}
+	this->state = s;
+}
 
 int main()
 {
-    int isTouch = 0;
-    timeToAdd = 0;
-    uint16_t x, y;
-    uint8_t idx;
-    
-    displayInit();
-    MachineContext->start();
+	int isTouch = 0;
+	timeToAdd = 0;
+	uint16_t x, y;
+	uint8_t idx;
 
-    while (1) {
-        // touch detect
-        BSP_TS_GetState(&TS_State);
-        if (TS_State.touchDetected) {
-            for (idx = 0; idx < TS_State.touchDetected; idx++) {
-                x = TS_State.touchX[idx];
-                y = TS_State.touchY[idx];
-                if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize && isTouch == 0) {
-                    timeToAdd += 10;
-                }
-                else if (x >= incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize && isTouch == 0) {
-                    timeToAdd -= 10;
-                }
-                isTouch = 1;
-            }
-        }
-        else {
-            isTouch = 0;
-        }
-      
-    }
+	displayInit();
+	MachineContext->start();
+
+	while (1) {
+		// touch detect
+		BSP_TS_GetState(&TS_State);
+		if (TS_State.touchDetected) {
+			for (idx = 0; idx < TS_State.touchDetected; idx++) {
+				x = TS_State.touchX[idx];
+				y = TS_State.touchY[idx];
+				if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize && isTouch == 0) {
+					timeToAdd += 10;
+				}
+				else if (x >= incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize && isTouch == 0) {
+					timeToAdd -= 10;
+				}
+				isTouch = 1;
+			}
+		}
+		else {
+			isTouch = 0;
+		}
+
+	}
 }
