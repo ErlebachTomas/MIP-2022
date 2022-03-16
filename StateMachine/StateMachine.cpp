@@ -70,7 +70,7 @@ public:
     /// <summary>
     /// Spustí akci uvnitř aktuálního stavu
     /// </summary>
-    void run() {
+    void start() {
         state->action();
     }
 
@@ -93,7 +93,7 @@ private:
 
 int main() {
     Machine* MachineContext = new Machine(new CoutingState());
-    MachineContext->run();
+    MachineContext->start();
     // zpracovani udalosti
     MachineContext->event(Event::explosion);
     MachineContext->event(Event::reset);

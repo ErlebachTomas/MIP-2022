@@ -19,19 +19,24 @@ using namespace std::chrono;
 InterruptIn button(BUTTON1);
 Timeout flipper;
 TS_StateTypeDef TS_State;
+int timeToAdd;
+uint8_t status;
+int timeValue;
+uint8_t text[30];
+
+Machine* MachineContext = new Machine(new CoutingState());
 
 void drawButtons()
 {
     // set
     BSP_LCD_DrawRect(setX, setY, setWidth, setHeight);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)"Set", CENTER_MODE);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)" ", CENTER_MODE);
     // inc
     BSP_LCD_DrawRect(incDecX, incY, incDecSize, incDecSize);
     BSP_LCD_DisplayChar(417, 135, '+');
     // dec
     BSP_LCD_DrawRect(incDecX, decY, incDecSize, incDecSize);
     BSP_LCD_DisplayChar(417, 195, '-');
-
 }
 
 void drawBomb()
@@ -44,69 +49,128 @@ void drawBomb()
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 }
 
-void redrawWick(int remaining_time)
-{
-    // TODO
-}
-void display()
-{
-    drawButtons();
-    drawBomb();
-    //flipper.attach(&display, 120s);
-}
-void set()
-{
-    uint16_t x, y;
-    uint8_t idx;
-    BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)"Tlacitko", CENTER_MODE);
-    BSP_TS_GetState(&TS_State);
-    if (TS_State.touchDetected) {
-        for(idx = 0; idx < TS_State.touchDetected; idx++) {
-            x = TS_State.touchX[idx];
-            y = TS_State.touchY[idx];
-            if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut plus!", CENTER_MODE);
-            } else if (x >=incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut minus", CENTER_MODE);
-            }
-        }
-    }
+
+void trigger() {
+    MachineContext->event(MyEvent::explosion);
 }
 
-//TODO definice konkrétních stavů
+void triggerButton() {
+    if (timeValue + timeToAdd <= 0) {
+        timeToAdd = -timeValue + 2;
+    } 
+    MachineContext->event(MyEvent::set);
+}
+
+void displayInit()
+{
+    BSP_LCD_Init();
+    BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
+    BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
+
+    BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOMBA DEMO", CENTER_MODE);
+    HAL_Delay(1000);
+
+    status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+
+    if (status != TS_OK) {
+        BSP_LCD_Clear(LCD_COLOR_RED);
+        BSP_LCD_SetBackColor(LCD_COLOR_RED);
+        BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT FAIL", CENTER_MODE);
+    }
+    else {
+        BSP_LCD_Clear(LCD_COLOR_GREEN);
+        BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
+        BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT OK", CENTER_MODE);
+    }
+    HAL_Delay(1000);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SetFont(&Font24);
+    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+
+    // draw buttons
+    drawButtons();
+
+    // draw bomba
+    drawBomb();
+
+    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
+
+    flipper.attach(&trigger, 120s);
+
+    button.rise(&triggerButton);
+
+}
+
 void CoutingState::action() {
-   // cout << "Casovac, tik tak, tik tak..." << endl;
+    timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
+
+    sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+    BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
+
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
 };
 
 AbstractState* CoutingState::nextState(MyEvent e) {
     switch (e) {
     case MyEvent::explosion:
-        return new BoomState();
+        return new BumState();
     case MyEvent::set:
         return new SetState();
     default:
         return this;
     }
 }
-  
-/*BOOM CLASS */
-void BoomState::action() {
+
+void BumState::action() {
+    
     boomAnimation(4);
     HAL_Delay(1000);
+
+    this->event(MyEvent::reset);
+
 }
-AbstractState* BoomState::nextState(MyEvent e) {
+void BumState::reset() {
+
+    HAL_Delay(1000);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SetFont(&Font24);
+    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+
+    timeToAdd = 0;
+    // draw buttons
+    drawButtons();
+
+    // draw bomba
+    drawBomb();
+
+    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
+
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
+
+    flipper.attach(&trigger, 120s);
+
+    button.rise(&triggerButton);
+}
+
+AbstractState* BumState::nextState(MyEvent e) {
     switch (e) {
     case MyEvent::reset:
+                    this->reset();
         return new CoutingState();
     default:
         return this;
     }
+
 };
-/// <summary>
-/// Přehraje animaci pro výbuch
-/// </summary>
-/// <param name="count">Počet opakování animace</param>
-void BoomState::boomAnimation(int count)
+
+
+void BumState::boomAnimation(int count)
 {
     for (int i = 0; i < count; i++) {
         BSP_LCD_Clear(LCD_COLOR_RED);
@@ -124,11 +188,19 @@ void BoomState::boomAnimation(int count)
 
 
 void SetState::action() {
-    //cout << "Otevrit nastaveni" << endl;
+
+    HAL_Delay(1000);
+
+    flipper.attach(&trigger, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+
+    timeToAdd = 0;
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t*)&text, CENTER_MODE);
+
 };
 AbstractState* SetState::nextState(MyEvent e) {
-    return this;
-} 
+    return new CoutingState();
+}
 
 /// <summary>
 /// Drží kontext s aktuálním stavem, přechod řízen pomocí událostí 
@@ -139,9 +211,9 @@ public:
     /// Konstruktor stavového automatu, vyžaduje zadání počátečního stavu 
     /// </summary>
     /// <param name="startState">Počáteční stav</param>
-    Machine(AbstractState* const startState)  {    
+    Machine(AbstractState* const startState) {
         this->setState(startState);
-    }    
+    }
     ~Machine() {
         if (state) {
             delete state;
@@ -151,11 +223,11 @@ public:
     /// <summary>
     /// Na základě události přepne stav a spustí akci
     /// </summary>
-    void event(MyEvent e) {     
-       this->setState(state->nextState(e));
-       state->action();
+    void event(MyEvent e) {
+        this->setState(state->nextState(e));
+        state->action();
     }
-        
+
     /// <summary>
     /// Spustí akci uvnitř aktuálního stavu
     /// </summary>
@@ -179,115 +251,37 @@ private:
         state = s;
     }
 };
-/// <summary>
-/// Třída pro LCD bombu
-/// </summary>
-class Bomba {
-public:
-    Bomba() {
-    this->MachineContext = new Machine(new CoutingState());
-    }
-    ~Bomba() {}
 
-    void run() {
-        this->MachineContext->start();               
-
-        int timeValue;
-        uint16_t x, y;
-        uint8_t text[30];
-        uint8_t status;
-        uint8_t idx;
-
-        BSP_LCD_Init();
-        BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
-        BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
-
-        BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"BOMBA DEMO", CENTER_MODE);
-        HAL_Delay(1000);
-
-        status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-        if (status != TS_OK) {
-            BSP_LCD_Clear(LCD_COLOR_RED);
-            BSP_LCD_SetBackColor(LCD_COLOR_RED);
-            BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-            BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT FAIL", CENTER_MODE);
-        }
-        else {
-            BSP_LCD_Clear(LCD_COLOR_GREEN);
-            BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
-            BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-            BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t*)"TOUCHSCREEN INIT OK", CENTER_MODE);
-        }
-        HAL_Delay(1000);
-        BSP_LCD_Clear(LCD_COLOR_WHITE);
-        BSP_LCD_SetFont(&Font24);
-        BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-
-        // draw buttons
-        drawButtons();
-
-        // draw bomba
-        drawBomb();
-        /*
-        Timeout flipper;
-        flipper.attach(this, &Bomba::timeOver, 100s); // odpálí bombu
-        */
-        //button.rise(&set);
-
-       
-    }
-    /// <summary>
-    /// Detonate
-    /// </summary>
-    void timeOver() {
-        this->MachineContext->event(MyEvent::explosion);
-    }
-private:
-    /// <summary>
-    /// STAVOVÝ AUTOMAT
-    /// </summary>
-    Machine* MachineContext;
-    
-    void reset() {
-        this->MachineContext->event(MyEvent::reset);
-    }
-    void set() {
-        this->MachineContext->event(MyEvent::set);
-    } 
-
-    typedef int (Bomba::* method)();
-    method p;
-   
-
-};
 
 int main()
-{    
-    Bomba* b = new Bomba();
-    b->run();
-    flipper.attach(b, &Bomba::timeOver, 100s); // odpálí bombu
-    button.rise(&set);
+{
+    int isTouch = 0;
+    timeToAdd = 0;
+    uint16_t x, y;
+    uint8_t idx;
+    
+    displayInit();
+    MachineContext->start();
 
     while (1) {
-        // print zbyvajiciho casu
-        timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
-        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t*)"Remaining Time", CENTER_MODE);
-
-        sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
-
-        BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t*)&text, CENTER_MODE);
-
         // touch detect
         BSP_TS_GetState(&TS_State);
         if (TS_State.touchDetected) {
             for (idx = 0; idx < TS_State.touchDetected; idx++) {
                 x = TS_State.touchX[idx];
                 y = TS_State.touchY[idx];
-                if (x >= setX && x <= setX + setWidth && y >= setY && y <= setY + setHeight) {
-                    BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t*)"Bylo zmacknut set", CENTER_MODE);
+                if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize && isTouch == 0) {
+                    timeToAdd += 10;
                 }
+                else if (x >= incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize && isTouch == 0) {
+                    timeToAdd -= 10;
+                }
+                isTouch = 1;
             }
         }
+        else {
+            isTouch = 0;
+        }
+      
     }
 }

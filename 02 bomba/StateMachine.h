@@ -40,6 +40,7 @@ public:
     AbstractState* nextState(MyEvent e);
 private:
     void boomAnimation(int count);
+    void reset();
 };
 
 class SetState : public AbstractState {
