@@ -3,7 +3,7 @@
 /// <summary>
 /// Číselník událostí
 /// </summary>
-enum class Event {
+enum class MyEvent {
 	reset,
 	explosion,
 	set
@@ -20,7 +20,7 @@ public:
     /// </summary>
     /// <param name="e">Událost řídící přechod</param>
     /// <returns>Stav v dalším kroce</returns>
-    virtual AbstractState* nextState(Event e) {
+    virtual AbstractState* nextState(MyEvent e) {
         return this;
     }
     /// <summary>
@@ -31,17 +31,19 @@ public:
 class CoutingState : public AbstractState {
 public:   
     void action();
-    AbstractState* nextState(Event e);
+    AbstractState* nextState(MyEvent e);
 };
 
-class BumState : public AbstractState {
+class BoomState : public AbstractState {
 public:    
     void action();
-    AbstractState* nextState(Event e);
+    AbstractState* nextState(MyEvent e);
+private:
+    void boomAnimation(int count);
 };
 
 class SetState : public AbstractState {
 public:    
     void action();
-    AbstractState* nextState(Event e);
+    AbstractState* nextState(MyEvent e);
 };
