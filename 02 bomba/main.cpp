@@ -18,19 +18,25 @@ using namespace std::chrono;
 InterruptIn button(BUTTON1);
 Timeout flipper;
 TS_StateTypeDef TS_State;
+int timeToAdd;
+uint8_t status;
+int timeValue;
+uint8_t text[30];
+
+enum class State {RESET, COUNT, SET, BOOM};
+State state = State::RESET;
 
 void drawButtons()
 {
     // set
     BSP_LCD_DrawRect(setX, setY, setWidth, setHeight);
-    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)"Set", CENTER_MODE);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)" ", CENTER_MODE);
     // inc
     BSP_LCD_DrawRect(incDecX, incY, incDecSize, incDecSize);
     BSP_LCD_DisplayChar(417, 135, '+');
     // dec
     BSP_LCD_DrawRect(incDecX, decY, incDecSize, incDecSize);
     BSP_LCD_DisplayChar(417, 195, '-');
-
 }
 
 void drawBomb()
@@ -41,11 +47,6 @@ void drawBomb()
     BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
     BSP_LCD_FillCircle(55, 120, 10);
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-}
-
-void redrawWick(int remaining_time)
-{
-    // TODO
 }
 
 void boomAnimation(int count)
@@ -64,46 +65,27 @@ void boomAnimation(int count)
     BSP_LCD_Clear(LCD_COLOR_WHITE);
 }
 
-void display()
+
+void displayBoomBoom()
 {
     boomAnimation(4);
     HAL_Delay(1000);
-    drawButtons();
-    drawBomb();
-    flipper.attach(&display, 120s);
+    state = State::RESET;
 }
 
+void trigger() {
+    state = State::BOOM;
+}
 
-void set()
-{
-    uint16_t x, y;
-    uint8_t idx;
-    BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)"Tlacitko", CENTER_MODE);
-    BSP_TS_GetState(&TS_State);
-    if (TS_State.touchDetected) {
-        for(idx = 0; idx < TS_State.touchDetected; idx++) {
-            x = TS_State.touchX[idx];
-            y = TS_State.touchY[idx];
-            if (x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut plus!", CENTER_MODE);
-            } else if (x >=incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize) {
-                BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Byl zmacknut minus", CENTER_MODE);
-            }
-        }
+void triggerButton() {
+    if(timeValue + timeToAdd <= 0) {
+       timeToAdd = -timeValue + 2;  
     }
+    state = State::SET;   
 }
 
-
-int main()
+void displayInit()
 {
-    int timeValue;
-    uint16_t x, y;
-    uint8_t text[30];
-    uint8_t status;
-    uint8_t idx;
-    uint8_t cleared = 0;
-    uint8_t prev_nb_touches = 0;
-
     BSP_LCD_Init();
     BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FB_START_ADDRESS);
     BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
@@ -112,6 +94,7 @@ int main()
     HAL_Delay(1000);
 
     status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+
     if (status != TS_OK) {
         BSP_LCD_Clear(LCD_COLOR_RED);
         BSP_LCD_SetBackColor(LCD_COLOR_RED);
@@ -134,33 +117,106 @@ int main()
 
     // draw bomba
     drawBomb();
+    
+    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Remaining Time", CENTER_MODE);
+    
+    flipper.attach(&trigger, 120s);
+    
+    button.rise(&triggerButton);
 
-    flipper.attach(&display, 100s);
+}
 
-    button.rise(&set);
+void reset() {
+    HAL_Delay(1000);
+    BSP_LCD_Clear(LCD_COLOR_WHITE);
+    BSP_LCD_SetFont(&Font24);
+    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+
+    timeToAdd = 0;
+    // draw buttons
+    drawButtons();
+
+    // draw bomba
+    drawBomb();
+    
+    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Remaining Time", CENTER_MODE);
+    
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)&text, CENTER_MODE);
+    
+    flipper.attach(&trigger, 120s);
+    
+    button.rise(&triggerButton);
+    
+    state = State::COUNT;    
+}
+
+void set()
+{
+    HAL_Delay(1000);
+    
+    flipper.attach(&trigger, timeToAdd + duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+    
+    timeToAdd = 0;
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)&text, CENTER_MODE);
+    
+    state = State::COUNT;
+}
+
+void count()
+{
+    timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
+
+    sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
+    BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t *)&text, CENTER_MODE);
+
+    sprintf((char*)text, "  %d  ", timeToAdd);
+    BSP_LCD_DisplayStringAt(0, 135, (uint8_t *)&text, CENTER_MODE);
+}
+
+int main()
+{
+    int isTouch = 0;
+    timeToAdd = 0;
+    uint16_t x, y;
+    uint8_t idx;
+
+    displayInit();
 
     while(1) {
-        // print zbyvajiciho casu
-        timeValue = duration_cast<seconds>(flipper.remaining_time()).count() + 1;
-        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Remaining Time", CENTER_MODE);
-
-        sprintf((char*)text, "  %llu  ", duration_cast<seconds>(flipper.remaining_time()).count() + 1);
-
-        BSP_LCD_DisplayStringAt(0, LINE(2), (uint8_t *)&text, CENTER_MODE);
-
         // touch detect
         BSP_TS_GetState(&TS_State);
         if (TS_State.touchDetected) {
             for(idx = 0; idx < TS_State.touchDetected; idx++) {
                 x = TS_State.touchX[idx];
                 y = TS_State.touchY[idx];
-                if(x >= setX && x <= setX + setWidth && y >= setY && y <= setY + setHeight) {
-                    BSP_LCD_DisplayStringAt(0, LINE(4), (uint8_t *)"Bylo zmacknut set", CENTER_MODE);
+                if(x >= incDecX && x <= incDecX + incDecSize && y >= incY && y <= incY + incDecSize && isTouch == 0) {
+                    timeToAdd += 10;
+                } else if (x >= incDecX && x <= incDecX + incDecSize && y >= decY && y <= decY + incDecSize && isTouch == 0) {
+                    timeToAdd -= 10;
                 }
+                isTouch = 1;
             }
+        } else {
+            isTouch = 0;
         }
+        
+        //switch states
+        switch(state) {
+            case State::RESET:
+                reset();
+                break;
+            case State::COUNT:
+                count();
+                break;
+            case State::SET:
+                set();
+                break;
+            case State::BOOM:
+                displayBoomBoom();
+                break; 
+        }    
     }
 }
-
-
-
