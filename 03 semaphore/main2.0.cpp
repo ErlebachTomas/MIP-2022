@@ -8,6 +8,8 @@ Semaphore one_slot(1);
 Thread t2;
 Thread t3;
 Thread t4;
+Thread t5;
+Thread t6;
 
 int isTouch = 0;
 
@@ -82,6 +84,20 @@ void test_thread(void const *name)
                             BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
                             BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Thread 4", CENTER_MODE);
                             break;
+                        case '5':
+                            BSP_LCD_Clear(LCD_COLOR_BLACK);
+                            BSP_LCD_SetFont(&Font24);
+                            BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+                            BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+                            BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Thread 5", CENTER_MODE);
+                            break;
+                        case '6':
+                            BSP_LCD_Clear(LCD_COLOR_WHITE);
+                            BSP_LCD_SetFont(&Font24);
+                            BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+                            BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+                            BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Thread 6", CENTER_MODE);
+                            break;
                     }
                 }
             }
@@ -102,5 +118,7 @@ int main()
     t2.start(callback(test_thread, (void *)"2"));
     t3.start(callback(test_thread, (void *)"3"));
     t4.start(callback(test_thread, (void *)"4"));
+    t5.start(callback(test_thread, (void *)"5"));
+    t6.start(callback(test_thread, (void *)"6"));
     test_thread((void *)"1");
 }
