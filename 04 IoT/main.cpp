@@ -1,9 +1,13 @@
 #include "mbed.h"
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
-#include <string>
+#include "string"
 
-Serial pc(USBTX, USBRX);
+
+#define MAXIMUM_BUFFER_SIZE  32
+static BufferedSerial  serial_port(USBTX, USBRX);
+
+
 // 480x272 velikost displaye
 InterruptIn button(BUTTON1);
 
@@ -44,20 +48,34 @@ void displayInit()
 void test_thread(void const *name)
 {    
         one_slot.acquire();
-   
-        String msg = strcat("Odesílám ...",name);
-        pc.printf(msg);
+        
+        char buff[MAXIMUM_BUFFER_SIZE];
+        sprintf(buff,"Test!");
+              
+        serial_port.write( buff , sizeof(buff));
        
         one_slot.release();
-    }
+    
 }
 
 void triggerButton() { 
-    pc.printf("Tlacitko");
+  
+  string msg = "Tlacitko!";
+  //serial_port.write( msg , sizeof(msg));
+  
 }
 
 int main()
 {
+    
+    serial_port.set_baud(9600);
+    serial_port.set_format(
+        /* bits */ 8,
+        /* parity */ BufferedSerial::None,
+        /* stop bit */ 1
+    );
+    
+    
     // display init
     displayInit();
     HAL_Delay(1000);
