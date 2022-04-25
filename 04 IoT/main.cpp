@@ -2,9 +2,14 @@
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
 #include "string"
-
+#include "ctime"
 
 #define MAXIMUM_BUFFER_SIZE  32
+#define API_KEY "7BGKHY6ER3G9WR3M"
+#define KAREL "M20000163"
+#define TOM "M20000165"
+
+
 static BufferedSerial  serial_port(USBTX, USBRX);
 
 
@@ -48,22 +53,32 @@ void displayInit()
 void test_thread(void const *name)
 {    
         one_slot.acquire();
-        
+        //TODO 
         char buff[MAXIMUM_BUFFER_SIZE];
-        sprintf(buff,"Test!");
-              
+        sprintf(buff,"Test!");              
         serial_port.write( buff , sizeof(buff));
        
         one_slot.release();
     
 }
 
+void sendPOST(char* key, char* time, char* student) {
+    
+   char buff[MAXIMUM_BUFFER_SIZE];
+           
+   sprintf(buff, "POST /update HTTP/1.1\r\n Host: api.thingspeak.com\r\n Content-Type: application/x-www-form-urlencoded\r\n");
+   sprintf(buff, "api_key=%s&field1=%s&field2=%s",key, student, time);
+   serial_port.write( buff , sizeof(buff));  
+}
+
+
 void triggerButton() { 
   
-  string msg = "Tlacitko!";
-  //serial_port.write( msg , sizeof(msg));
+  sendPOST(API_KEY, "ted", KAREL);
+ 
   
 }
+
 
 int main()
 {
