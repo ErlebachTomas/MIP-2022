@@ -53,8 +53,15 @@ void test_thread(void const *name)
                 //BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)name, CENTER_MODE);
                 char val = *(char*)name;
                 if (val == '2') {
+                    BSP_LCD_Clear(LCD_COLOR_WHITE);
+                    BSP_LCD_SetFont(&Font24);
+                    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+                    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+                    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Posilam data...", CENTER_MODE);
                     time_t t = time(0);
-                    printf("%s %s %s %s %s %d\n", "api_key=", "\"7BGKHY6ER3G9WR3M\"", "&field1=", "\"PILAR_RUBES\"", "&field2=", t);
+                    printf("%s %s %s %s %s %d\n", "api_key=", "\"7BGKHY6ER3G9WR3M\"", "&field1=", "\"CISLO\"", "&field2=", t);
+                    HAL_Delay(500);
+                    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Data byla poslana...", CENTER_MODE);
                 }
             }
             isTouch = 1;
