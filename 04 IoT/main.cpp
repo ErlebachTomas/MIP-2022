@@ -8,6 +8,10 @@
 #define KAREL "M20000163"
 #define TOM "M20000165"
 // 480x272 velikost displaye
+#define btnX 150
+#define btnY 150
+#define btnWidth 180
+#define btnHeight 50
 
 Semaphore one_slot(1);
 Thread t2;
@@ -19,6 +23,8 @@ uint8_t status;
 uint8_t text[30];
 uint8_t idx;
 char previousThread = '0';
+
+
 
 void displayInit()
 {
@@ -43,33 +49,68 @@ void displayInit()
     BSP_LCD_SetFont(&Font24);
     BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+    
+    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Aplikace pro odesilani dat", CENTER_MODE);
+}
+
+void drawUI()
+{ 
+ BSP_LCD_DrawRect(btnX, btnY, btnWidth, btnHeight);
+ uint16_t x = 0;
+ uint16_t y = btnY + 17;
+ BSP_LCD_DisplayStringAt(x, y, (uint8_t *) "Odeslat!", CENTER_MODE);
+ 
+}
+
+void sendPost(string apiKey, string studentNumber) {
+    time_t t = time(0); 
+    printf("POST /update HTTP/1.1 Host:api.thingspeak.com Content-Type:application/x-www-form-urlencoded\r\n");                   
+    
+    const char * key = apiKey.c_str();
+    const char * student = studentNumber.c_str();
+    
+    printf("%s%s%s%s%s%d\n", "api_key=", key, "&field1=",student , "&field2=", t);
 }
 
 void test_thread(void const *name)
 {
+    uint16_t x, y;   
+    uint8_t idx;
+    
     while(true) {
         one_slot.acquire();
         BSP_TS_GetState(&TS_State);
         if (TS_State.touchDetected) {
-            if (isTouch == 0) {
-                //BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)name, CENTER_MODE);
-                char val = *(char*)name;
-                if (val == '2') {
-                    BSP_LCD_Clear(LCD_COLOR_WHITE);
-                    BSP_LCD_SetFont(&Font24);
-                    BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-                    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-                    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Posilam data...", CENTER_MODE);
-                    time_t t = time(0);
-                    printf("%s %s %s %s %s %d\n", "api_key=", "\"7BGKHY6ER3G9WR3M\"", "&field1=", "\"CISLO\"", "&field2=", t);
-                    HAL_Delay(500);
-                    BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Data byla poslana...", CENTER_MODE);
+            
+            for(idx = 0; idx < TS_State.touchDetected; idx++) {
+             
+               x = TS_State.touchX[idx];
+               y = TS_State.touchY[idx];
+                           
+                if (isTouch == 0 &&  x >= btnX && x <= btnX + btnWidth && y >= btnY && y <= btnY + btnHeight ) {
+                    //BSP_LCD_DisplayStringAt(0, LINE(5), (uint8_t *)name, CENTER_MODE);
+                    char val = *(char*)name;
+                    if (val == '2') {
+                        BSP_LCD_Clear(LCD_COLOR_WHITE);
+                        BSP_LCD_SetFont(&Font24);
+                        BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+                        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+                        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Posilam data...", CENTER_MODE);
+                                      
+                        sendPost(API_KEY, KAREL);
+                        sendPost(API_KEY, TOM);
+                        
+                        HAL_Delay(500);
+                        BSP_LCD_DisplayStringAt(0, LINE(1), (uint8_t *)"Data byla poslana...", CENTER_MODE);
+                        
+                    }
                 }
+                isTouch = 1;
             }
-            isTouch = 1;
         } else {
             isTouch = 0;
         }
+        drawUI();
         one_slot.release();
     }
 }
@@ -78,6 +119,8 @@ int main()
 {
     // display init
     displayInit();
+    drawUI();
+    
     HAL_Delay(1000);
     // threads start
     t2.start(callback(test_thread, (void *)"2"));
